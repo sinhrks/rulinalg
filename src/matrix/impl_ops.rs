@@ -5,8 +5,11 @@ use super::{BaseMatrix, BaseMatrixMut};
 use super::super::utils;
 use super::super::vector::Vector;
 
-use std::ops::{Mul, Add, Div, Sub, Index, IndexMut, Neg};
-use std::ops::{MulAssign, AddAssign, SubAssign, DivAssign};
+use std::ops::{Mul, Div, Add, Sub, Rem,
+               MulAssign, DivAssign, AddAssign, SubAssign, RemAssign,
+               Neg, Not,
+               BitAnd, BitOr, BitXor, BitAndAssign, BitOrAssign, BitXorAssign,
+               Index, IndexMut};
 use libnum::Zero;
 
 /// Indexes matrix.
@@ -176,15 +179,20 @@ impl<'a, 'b, 'c, T> $trt<&'c T> for &'b $slice<'a, T>
 }
     );
 );
-
-impl_bin_op_scalar_slice!(Mul, mul, MatrixSlice, "multiplication");
-impl_bin_op_scalar_slice!(Mul, mul, MatrixSliceMut, "multiplication");
-impl_bin_op_scalar_slice!(Div, div, MatrixSlice, "division");
-impl_bin_op_scalar_slice!(Div, div, MatrixSliceMut, "division");
-impl_bin_op_scalar_slice!(Add, add, MatrixSlice, "addition");
-impl_bin_op_scalar_slice!(Add, add, MatrixSliceMut, "addition");
-impl_bin_op_scalar_slice!(Sub, sub, MatrixSlice, "subtraction");
-impl_bin_op_scalar_slice!(Sub, sub, MatrixSliceMut, "subtraction");
+macro_rules! impl_bin_op_scalar_slice_patterns (
+    ($trt:ident, $op:ident, $doc:expr) => (
+        impl_bin_op_scalar_slice!($trt, $op, MatrixSlice, $doc);
+        impl_bin_op_scalar_slice!($trt, $op, MatrixSliceMut, $doc);
+    );
+);
+impl_bin_op_scalar_slice_patterns!(Mul, mul, "multiplication");
+impl_bin_op_scalar_slice_patterns!(Div, div, "division");
+impl_bin_op_scalar_slice_patterns!(Add, add, "addition");
+impl_bin_op_scalar_slice_patterns!(Sub, sub, "subtraction");
+impl_bin_op_scalar_slice_patterns!(Rem, rem, "remainder");
+impl_bin_op_scalar_slice_patterns!(BitAnd, bitand, "bitwise-and");
+impl_bin_op_scalar_slice_patterns!(BitOr, bitor, "bitwise-xor");
+impl_bin_op_scalar_slice_patterns!(BitXor, bitxor, "bitwise-xor");
 
 macro_rules! impl_bin_op_scalar_matrix (
     ($trt:ident, $op:ident, $doc:expr) => (
@@ -256,10 +264,14 @@ impl<'a, 'b, T> $trt<&'b T> for &'a Matrix<T>
     );
 );
 
-impl_bin_op_scalar_matrix!(Add, add, "addition");
 impl_bin_op_scalar_matrix!(Mul, mul, "multiplication");
-impl_bin_op_scalar_matrix!(Sub, sub, "subtraction");
 impl_bin_op_scalar_matrix!(Div, div, "division");
+impl_bin_op_scalar_matrix!(Add, add, "addition");
+impl_bin_op_scalar_matrix!(Sub, sub, "subtraction");
+impl_bin_op_scalar_matrix!(Rem, rem, "remainder");
+impl_bin_op_scalar_matrix!(BitAnd, bitand, "bitwise-and");
+impl_bin_op_scalar_matrix!(BitOr, bitor, "bitwise-or");
+impl_bin_op_scalar_matrix!(BitXor, bitxor, "bitwise-xor");
 
 /// Multiplies matrix by vector.
 impl<T> Mul<Vector<T>> for Matrix<T>
@@ -382,15 +394,21 @@ impl<'a, 'b, 'c, 'd, T> $trt<&'d $slice_2<'b, T>> for &'c $slice_1<'a, T>
     );
 );
 
-impl_bin_op_slice!(Add, add, MatrixSlice, MatrixSlice, "addition");
-impl_bin_op_slice!(Add, add, MatrixSliceMut, MatrixSlice, "addition");
-impl_bin_op_slice!(Add, add, MatrixSlice, MatrixSliceMut, "addition");
-impl_bin_op_slice!(Add, add, MatrixSliceMut, MatrixSliceMut, "addition");
+macro_rules! impl_bin_op_slice_patterns (
+    ($trt:ident, $op:ident, $doc:expr) => (
+        impl_bin_op_slice!($trt, $op, MatrixSlice, MatrixSlice, $doc);
+        impl_bin_op_slice!($trt, $op, MatrixSliceMut, MatrixSlice, $doc);
+        impl_bin_op_slice!($trt, $op, MatrixSlice, MatrixSliceMut, $doc);
+        impl_bin_op_slice!($trt, $op, MatrixSliceMut, MatrixSliceMut, $doc);
+    );
+);
+impl_bin_op_slice_patterns!(Add, add, "addition");
+impl_bin_op_slice_patterns!(Sub, sub, "subtraction");
+impl_bin_op_slice_patterns!(Rem, rem, "remainder");
+impl_bin_op_slice_patterns!(BitAnd, bitand, "bitwise-and");
+impl_bin_op_slice_patterns!(BitOr, bitor, "bitwise-or");
+impl_bin_op_slice_patterns!(BitXor, bitxor, "bitwise-xor");
 
-impl_bin_op_slice!(Sub, sub, MatrixSlice, MatrixSlice, "subtraction");
-impl_bin_op_slice!(Sub, sub, MatrixSliceMut, MatrixSlice, "subtraction");
-impl_bin_op_slice!(Sub, sub, MatrixSlice, MatrixSliceMut, "subtraction");
-impl_bin_op_slice!(Sub, sub, MatrixSliceMut, MatrixSliceMut, "subtraction");
 
 macro_rules! impl_bin_op_mat_slice (
     ($trt:ident, $op:ident, $slice:ident, $doc:expr) => (
@@ -513,11 +531,18 @@ impl<'a, 'b, 'c, T> $trt<&'c $slice<'a, T>> for &'b Matrix<T>
     );
 );
 
-impl_bin_op_mat_slice!(Add, add, MatrixSlice, "addition");
-impl_bin_op_mat_slice!(Add, add, MatrixSliceMut, "addition");
-
-impl_bin_op_mat_slice!(Sub, sub, MatrixSlice, "subtraction");
-impl_bin_op_mat_slice!(Sub, sub, MatrixSliceMut, "subtraction");
+macro_rules! impl_bin_op_mat_slice_patterns (
+    ($trt:ident, $op:ident, $doc:expr) => (
+        impl_bin_op_mat_slice!($trt, $op, MatrixSlice, $doc);
+        impl_bin_op_mat_slice!($trt, $op, MatrixSliceMut, $doc);
+    );
+);
+impl_bin_op_mat_slice_patterns!(Add, add, "addition");
+impl_bin_op_mat_slice_patterns!(Sub, sub, "subtraction");
+impl_bin_op_mat_slice_patterns!(Rem, rem, "remainder");
+impl_bin_op_mat_slice_patterns!(BitAnd, bitand, "bitwise-and");
+impl_bin_op_mat_slice_patterns!(BitOr, bitor, "bitwise-or");
+impl_bin_op_mat_slice_patterns!(BitXor, bitxor, "bitwise-xor");
 
 macro_rules! impl_bin_op_mat (
     ($trt:ident, $op:ident, $doc:expr) => (
@@ -597,6 +622,10 @@ impl<'a, 'b, T> $trt<&'b Matrix<T>> for &'a Matrix<T>
 
 impl_bin_op_mat!(Add, add, "addition");
 impl_bin_op_mat!(Sub, sub, "subtraction");
+impl_bin_op_mat!(Rem, rem, "remainder");
+impl_bin_op_mat!(BitAnd, bitand, "bitwise-and");
+impl_bin_op_mat!(BitOr, bitor, "bitwise-or");
+impl_bin_op_mat!(BitXor, bitxor, "bitwise-xor");
 
 macro_rules! impl_op_assign_mat_scalar (
     ($assign_trt:ident, $trt:ident, $op:ident, $op_assign:ident, $doc:expr) => (
@@ -627,10 +656,14 @@ impl<'a, T> $assign_trt<&'a T> for Matrix<T>
     );
 );
 
+impl_op_assign_mat_scalar!(MulAssign, Mul, mul, mul_assign, "multiplication");
+impl_op_assign_mat_scalar!(DivAssign, Div, div, div_assign, "division");
 impl_op_assign_mat_scalar!(AddAssign, Add, add, add_assign, "addition");
 impl_op_assign_mat_scalar!(SubAssign, Sub, sub, sub_assign, "subtraction");
-impl_op_assign_mat_scalar!(DivAssign, Div, div, div_assign, "division");
-impl_op_assign_mat_scalar!(MulAssign, Mul, mul, mul_assign, "multiplication");
+impl_op_assign_mat_scalar!(RemAssign, Rem, rem, rem_assign, "remainder");
+impl_op_assign_mat_scalar!(BitAndAssign, BitAnd, bitand, bitand_assign, "bitwise-and");
+impl_op_assign_mat_scalar!(BitOrAssign, BitOr, bitor, bitor_assign, "bitwise-or");
+impl_op_assign_mat_scalar!(BitXorAssign, BitXor, bitxor, bitxor_assign, "bitwise-xor");
 
 macro_rules! impl_op_assign_slice_scalar (
     ($assign_trt:ident, $trt:ident, $op:ident, $op_assign:ident, $doc:expr) => (
@@ -661,10 +694,14 @@ impl<'a, 'b, T> $assign_trt<&'b T> for MatrixSliceMut<'a, T>
     );
 );
 
+impl_op_assign_slice_scalar!(MulAssign, Mul, mul, mul_assign, "multiplication");
+impl_op_assign_slice_scalar!(DivAssign, Div, div, div_assign, "division");
 impl_op_assign_slice_scalar!(AddAssign, Add, add, add_assign, "addition");
 impl_op_assign_slice_scalar!(SubAssign, Sub, sub, sub_assign, "subtraction");
-impl_op_assign_slice_scalar!(DivAssign, Div, div, div_assign, "division");
-impl_op_assign_slice_scalar!(MulAssign, Mul, mul, mul_assign, "multiplication");
+impl_op_assign_slice_scalar!(RemAssign, Rem, rem, rem_assign, "remainder");
+impl_op_assign_slice_scalar!(BitAndAssign, BitAnd, bitand, bitand_assign, "bitwise-and");
+impl_op_assign_slice_scalar!(BitOrAssign, BitOr, bitor, bitor_assign, "bitwise-or");
+impl_op_assign_slice_scalar!(BitXorAssign, BitXor, bitxor, bitxor_assign, "bitwise-xor");
 
 macro_rules! impl_op_assign_mat (
     ($assign_trt:ident, $trt:ident, $op:ident, $op_assign:ident, $doc:expr) => (
@@ -693,6 +730,10 @@ impl<'a, T> $assign_trt<&'a Matrix<T>> for Matrix<T>
 
 impl_op_assign_mat!(AddAssign, Add, add, add_assign, "addition");
 impl_op_assign_mat!(SubAssign, Sub, sub, sub_assign, "subtraction");
+impl_op_assign_mat!(RemAssign, Rem, rem, rem_assign, "remainder");
+impl_op_assign_mat!(BitAndAssign, BitAnd, bitand, bitand_assign, "bitwise-and");
+impl_op_assign_mat!(BitOrAssign, BitOr, bitor, bitor_assign, "bitwise-or");
+impl_op_assign_mat!(BitXorAssign, BitXor, bitxor, bitxor_assign, "bitwise-xor");
 
 macro_rules! impl_op_assign_slice_mat (
     ($assign_trt:ident, $trt:ident, $op:ident, $op_assign:ident, $doc:expr) => (
@@ -732,6 +773,10 @@ impl<'a, 'b, T> $assign_trt<&'b Matrix<T>> for MatrixSliceMut<'a, T>
 
 impl_op_assign_slice_mat!(AddAssign, Add, add, add_assign, "addition");
 impl_op_assign_slice_mat!(SubAssign, Sub, sub, sub_assign, "subtraction");
+impl_op_assign_slice_mat!(RemAssign, Rem, rem, rem_assign, "remainder");
+impl_op_assign_slice_mat!(BitAndAssign, BitAnd, bitand, bitand_assign, "bitwise-and");
+impl_op_assign_slice_mat!(BitOrAssign, BitOr, bitor, bitor_assign, "bitwise-or");
+impl_op_assign_slice_mat!(BitXorAssign, BitXor, bitxor, bitxor_assign, "bitwise-xor");
 
 macro_rules! impl_op_assign_slice (
     ($target_slice:ident, $assign_trt:ident,
@@ -772,10 +817,18 @@ impl<'a, 'b, 'c, T> $assign_trt<&'c $target_slice<'b, T>> for MatrixSliceMut<'a,
     );
 );
 
-impl_op_assign_slice!(MatrixSlice, AddAssign, Add, add, add_assign, "addition");
-impl_op_assign_slice!(MatrixSlice, SubAssign, Sub, sub, sub_assign, "subtraction");
-impl_op_assign_slice!(MatrixSliceMut, AddAssign, Add, add, add_assign, "addition");
-impl_op_assign_slice!(MatrixSliceMut, SubAssign, Sub, sub, sub_assign, "subtraction");
+macro_rules! impl_op_assign_slice_patterns (
+    ($assign_trt:ident, $trt:ident, $op:ident, $op_assign:ident, $doc:expr) => (
+        impl_op_assign_slice!(MatrixSlice, $assign_trt, $trt, $op, $op_assign, $doc);
+        impl_op_assign_slice!(MatrixSliceMut, $assign_trt, $trt, $op, $op_assign, $doc);
+    );
+);
+impl_op_assign_slice_patterns!(AddAssign, Add, add, add_assign, "addition");
+impl_op_assign_slice_patterns!(SubAssign, Sub, sub, sub_assign, "subtraction");
+impl_op_assign_slice_patterns!(RemAssign, Rem, rem, rem_assign, "remainder");
+impl_op_assign_slice_patterns!(BitAndAssign, BitAnd, bitand, bitand_assign, "bitwise-and");
+impl_op_assign_slice_patterns!(BitOrAssign, BitOr, bitor, bitor_assign, "bitwise-or");
+impl_op_assign_slice_patterns!(BitXorAssign, BitXor, bitxor, bitxor_assign, "bitwise-xor");
 
 macro_rules! impl_op_assign_mat_slice (
     ($target_mat:ident, $assign_trt:ident, $trt:ident, $op:ident, $op_assign:ident, $doc:expr) => (
@@ -810,31 +863,44 @@ impl<'a, 'b, T> $assign_trt<&'b $target_mat<'a, T>> for Matrix<T>
     );
 );
 
-impl_op_assign_mat_slice!(MatrixSlice, AddAssign, Add, add, add_assign, "addition");
-impl_op_assign_mat_slice!(MatrixSlice, SubAssign, Sub, sub, sub_assign, "subtraction");
-impl_op_assign_mat_slice!(MatrixSliceMut, AddAssign, Add, add, add_assign, "addition");
-impl_op_assign_mat_slice!(MatrixSliceMut, SubAssign, Sub, sub, sub_assign, "subtraction");
+macro_rules! impl_op_assign_mat_slice_patterns (
+    ($assign_trt:ident, $trt:ident, $op:ident, $op_assign:ident, $doc:expr) => (
+        impl_op_assign_mat_slice!(MatrixSlice, $assign_trt, $trt, $op, $op_assign, $doc);
+        impl_op_assign_mat_slice!(MatrixSliceMut, $assign_trt, $trt, $op, $op_assign, $doc);
+    );
+);
 
-macro_rules! impl_neg_slice (
-    ($slice:ident) => (
+impl_op_assign_mat_slice_patterns!(AddAssign, Add, add, add_assign, "addition");
+impl_op_assign_mat_slice_patterns!(SubAssign, Sub, sub, sub_assign, "subtraction");
+impl_op_assign_mat_slice_patterns!(RemAssign, Rem, rem, rem_assign, "remainder");
+impl_op_assign_mat_slice_patterns!(BitAndAssign, BitAnd, bitand, bitand_assign, "bitwise-and");
+impl_op_assign_mat_slice_patterns!(BitOrAssign, BitOr, bitor, bitor_assign, "bitwise-or");
+impl_op_assign_mat_slice_patterns!(BitXorAssign, BitXor, bitxor, bitxor_assign, "bitwise-xor");
 
-/// Gets negative of matrix slice.
-impl<'a, T> Neg for $slice<'a, T>
-    where T: Neg<Output = T> + Copy {
+macro_rules! impl_unary_slice (
+    ($slice:ident, $trt:ident, $op:ident, $sym:tt, $doc:expr) => (
+
+/// Gets
+#[doc=$doc]
+/// of matrix slice.
+impl<'a, T> $trt for $slice<'a, T>
+    where T: $trt<Output=T> + Copy {
     type Output = Matrix<T>;
 
-    fn neg(self) -> Matrix<T> {
-        - &self
+    fn $op(self) -> Matrix<T> {
+        $sym &self
     }
 }
 
-/// Gets negative of matrix slice.
-impl<'a, 'b, T> Neg for &'b $slice<'a, T>
-    where T: Neg<Output = T> + Copy {
+/// Gets
+#[doc=$doc]
+/// of matrix slice.
+impl<'a, 'b, T> $trt for &'b $slice<'a, T>
+    where T: $trt<Output=T> + Copy {
     type Output = Matrix<T>;
 
-    fn neg(self) -> Matrix<T> {
-        let new_data = self.iter().map(|v| -*v).collect();
+    fn $op(self) -> Matrix<T> {
+        let new_data = self.iter().map(|v| $sym *v).collect();
 
         Matrix {
             cols: self.cols,
@@ -843,36 +909,43 @@ impl<'a, 'b, T> Neg for &'b $slice<'a, T>
         }
     }
 }
-
     );
 );
+impl_unary_slice!(MatrixSlice, Neg, neg, -, "nagative");
+impl_unary_slice!(MatrixSliceMut, Neg, neg, -, "nagative");
+impl_unary_slice!(MatrixSlice, Not, not, !, "not");
+impl_unary_slice!(MatrixSliceMut, Not, not, !, "not");
 
-impl_neg_slice!(MatrixSlice);
-impl_neg_slice!(MatrixSliceMut);
+macro_rules! impl_unary_op (
+    ($trt:ident, $op:ident, $sym:tt, $doc:expr) => (
 
-/// Gets negative of matrix.
-impl<T> Neg for Matrix<T>
-    where T: Neg<Output = T> + Copy
+/// Gets
+#[doc=$doc]
+/// of matrix.
+impl<T> $trt for Matrix<T>
+    where T: $trt<Output=T> + Copy
 {
     type Output = Matrix<T>;
 
-    fn neg(mut self) -> Matrix<T> {
+    fn $op(mut self) -> Matrix<T> {
         for val in &mut self.data {
-            *val = -*val;
+            *val = $sym *val;
         }
 
         self
     }
 }
 
-/// Gets negative of matrix.
-impl<'a, T> Neg for &'a Matrix<T>
-    where T: Neg<Output = T> + Copy
+/// Gets
+#[doc=$doc]
+/// of matrix.
+impl<'a, T> $trt for &'a Matrix<T>
+    where T: $trt<Output=T> + Copy
 {
     type Output = Matrix<T>;
 
-    fn neg(self) -> Matrix<T> {
-        let new_data = self.data.iter().map(|v| -*v).collect();
+    fn $op(self) -> Matrix<T> {
+        let new_data = self.data.iter().map(|v| $sym *v).collect();
 
         Matrix {
             cols: self.cols,
@@ -881,6 +954,10 @@ impl<'a, T> Neg for &'a Matrix<T>
         }
     }
 }
+    );
+);
+impl_unary_op!(Neg, neg, -, "nagative");
+impl_unary_op!(Not, not, !, "not");
 
 #[cfg(test)]
 mod tests {
@@ -888,7 +965,7 @@ mod tests {
     use super::super::Matrix;
     use super::super::MatrixSlice;
     use super::super::MatrixSliceMut;
-    
+
     #[test]
     fn indexing_mat() {
         let a = matrix![1., 2.;
@@ -925,45 +1002,25 @@ mod tests {
                         3., 4.;
                         5., 6.];
 
+        let exp = matrix![2., 4.;
+                          6., 8.;
+                          10., 12.];
+
         // Allocating new memory
         let c = &a * &2.0;
-
-        assert_eq!(c[[0, 0]], 2.0);
-        assert_eq!(c[[0, 1]], 4.0);
-        assert_eq!(c[[1, 0]], 6.0);
-        assert_eq!(c[[1, 1]], 8.0);
-        assert_eq!(c[[2, 0]], 10.0);
-        assert_eq!(c[[2, 1]], 12.0);
+        assert_matrix_eq!(c, exp);
 
         // Allocating new memory
         let c = &a * 2.0;
-
-        assert_eq!(c[[0, 0]], 2.0);
-        assert_eq!(c[[0, 1]], 4.0);
-        assert_eq!(c[[1, 0]], 6.0);
-        assert_eq!(c[[1, 1]], 8.0);
-        assert_eq!(c[[2, 0]], 10.0);
-        assert_eq!(c[[2, 1]], 12.0);
+        assert_matrix_eq!(c, exp);
 
         // Reusing memory
         let c = a.clone() * &2.0;
-
-        assert_eq!(c[[0, 0]], 2.0);
-        assert_eq!(c[[0, 1]], 4.0);
-        assert_eq!(c[[1, 0]], 6.0);
-        assert_eq!(c[[1, 1]], 8.0);
-        assert_eq!(c[[2, 0]], 10.0);
-        assert_eq!(c[[2, 1]], 12.0);
+        assert_matrix_eq!(c, exp);
 
         // Reusing memory
         let c = a * 2.0;
-
-        assert_eq!(c[[0, 0]], 2.0);
-        assert_eq!(c[[0, 1]], 4.0);
-        assert_eq!(c[[1, 0]], 6.0);
-        assert_eq!(c[[1, 1]], 8.0);
-        assert_eq!(c[[2, 0]], 10.0);
-        assert_eq!(c[[2, 1]], 12.0);
+        assert_matrix_eq!(c, exp);
     }
 
     #[test]
@@ -975,45 +1032,25 @@ mod tests {
                         4., 5.;
                         6., 7.];
 
+        let exp = matrix![3., 5.;
+                          7., 9.;
+                          11., 13.];
+
         // Allocating new memory
         let c = &a + &b;
-
-        assert_eq!(c[[0, 0]], 3.0);
-        assert_eq!(c[[0, 1]], 5.0);
-        assert_eq!(c[[1, 0]], 7.0);
-        assert_eq!(c[[1, 1]], 9.0);
-        assert_eq!(c[[2, 0]], 11.0);
-        assert_eq!(c[[2, 1]], 13.0);
+        assert_matrix_eq!(c, exp);
 
         // Reusing memory
         let c = a.clone() + &b;
-
-        assert_eq!(c[[0, 0]], 3.0);
-        assert_eq!(c[[0, 1]], 5.0);
-        assert_eq!(c[[1, 0]], 7.0);
-        assert_eq!(c[[1, 1]], 9.0);
-        assert_eq!(c[[2, 0]], 11.0);
-        assert_eq!(c[[2, 1]], 13.0);
+        assert_matrix_eq!(c, exp);
 
         // Reusing memory
         let c = &a + b.clone();
-
-        assert_eq!(c[[0, 0]], 3.0);
-        assert_eq!(c[[0, 1]], 5.0);
-        assert_eq!(c[[1, 0]], 7.0);
-        assert_eq!(c[[1, 1]], 9.0);
-        assert_eq!(c[[2, 0]], 11.0);
-        assert_eq!(c[[2, 1]], 13.0);
+        assert_matrix_eq!(c, exp);
 
         // Reusing memory
         let c = a + b;
-
-        assert_eq!(c[[0, 0]], 3.0);
-        assert_eq!(c[[0, 1]], 5.0);
-        assert_eq!(c[[1, 0]], 7.0);
-        assert_eq!(c[[1, 1]], 9.0);
-        assert_eq!(c[[2, 0]], 11.0);
-        assert_eq!(c[[2, 1]], 13.0);
+        assert_matrix_eq!(c, exp);
     }
 
     #[test]
@@ -1023,45 +1060,25 @@ mod tests {
                         5., 6.];
         let b = 3.0;
 
+        let exp = matrix![4., 5.;
+                          6., 7.;
+                          8., 9.];
+
         // Allocating new memory
         let c = &a + &b;
-
-        assert_eq!(c[[0, 0]], 4.0);
-        assert_eq!(c[[0, 1]], 5.0);
-        assert_eq!(c[[1, 0]], 6.0);
-        assert_eq!(c[[1, 1]], 7.0);
-        assert_eq!(c[[2, 0]], 8.0);
-        assert_eq!(c[[2, 1]], 9.0);
+        assert_matrix_eq!(c, exp);
 
         // Allocating new memory
         let c = &a + b;
-
-        assert_eq!(c[[0, 0]], 4.0);
-        assert_eq!(c[[0, 1]], 5.0);
-        assert_eq!(c[[1, 0]], 6.0);
-        assert_eq!(c[[1, 1]], 7.0);
-        assert_eq!(c[[2, 0]], 8.0);
-        assert_eq!(c[[2, 1]], 9.0);
+        assert_matrix_eq!(c, exp);
 
         // Reusing memory
         let c = a.clone() + &b;
-
-        assert_eq!(c[[0, 0]], 4.0);
-        assert_eq!(c[[0, 1]], 5.0);
-        assert_eq!(c[[1, 0]], 6.0);
-        assert_eq!(c[[1, 1]], 7.0);
-        assert_eq!(c[[2, 0]], 8.0);
-        assert_eq!(c[[2, 1]], 9.0);
+        assert_matrix_eq!(c, exp);
 
         // Reusing memory
         let c = a + b;
-
-        assert_eq!(c[[0, 0]], 4.0);
-        assert_eq!(c[[0, 1]], 5.0);
-        assert_eq!(c[[1, 0]], 6.0);
-        assert_eq!(c[[1, 1]], 7.0);
-        assert_eq!(c[[2, 0]], 8.0);
-        assert_eq!(c[[2, 1]], 9.0);
+        assert_matrix_eq!(c, exp);
     }
 
     #[test]
@@ -1073,45 +1090,25 @@ mod tests {
                         4., 5.;
                         6., 7.];
 
+        let exp = matrix![-1., -1.;
+                          -1., -1.;
+                          -1., -1.];
+
         // Allocate new memory
         let c = &a - &b;
-
-        assert_eq!(c[[0, 0]], -1.0);
-        assert_eq!(c[[0, 1]], -1.0);
-        assert_eq!(c[[1, 0]], -1.0);
-        assert_eq!(c[[1, 1]], -1.0);
-        assert_eq!(c[[2, 0]], -1.0);
-        assert_eq!(c[[2, 1]], -1.0);
+        assert_matrix_eq!(c, exp);
 
         // Reusing memory
         let c = a.clone() - &b;
-
-        assert_eq!(c[[0, 0]], -1.0);
-        assert_eq!(c[[0, 1]], -1.0);
-        assert_eq!(c[[1, 0]], -1.0);
-        assert_eq!(c[[1, 1]], -1.0);
-        assert_eq!(c[[2, 0]], -1.0);
-        assert_eq!(c[[2, 1]], -1.0);
+        assert_matrix_eq!(c, exp);
 
         // Reusing memory
         let c = &a - b.clone();
-
-        assert_eq!(c[[0, 0]], -1.0);
-        assert_eq!(c[[0, 1]], -1.0);
-        assert_eq!(c[[1, 0]], -1.0);
-        assert_eq!(c[[1, 1]], -1.0);
-        assert_eq!(c[[2, 0]], -1.0);
-        assert_eq!(c[[2, 1]], -1.0);
+        assert_matrix_eq!(c, exp);
 
         // Reusing memory
         let c = &a - b;
-
-        assert_eq!(c[[0, 0]], -1.0);
-        assert_eq!(c[[0, 1]], -1.0);
-        assert_eq!(c[[1, 0]], -1.0);
-        assert_eq!(c[[1, 1]], -1.0);
-        assert_eq!(c[[2, 0]], -1.0);
-        assert_eq!(c[[2, 1]], -1.0);
+        assert_matrix_eq!(c, exp);
     }
 
     #[test]
@@ -1121,45 +1118,25 @@ mod tests {
                         5., 6.];
         let b = 3.0;
 
+        let exp = matrix![-2., -1.;
+                          -0., 1.;
+                          2., 3.];
+
         // Allocating new memory
         let c = &a - &b;
-
-        assert_eq!(c[[0, 0]], -2.0);
-        assert_eq!(c[[0, 1]], -1.0);
-        assert_eq!(c[[1, 0]], 0.0);
-        assert_eq!(c[[1, 1]], 1.0);
-        assert_eq!(c[[2, 0]], 2.0);
-        assert_eq!(c[[2, 1]], 3.0);
+        assert_matrix_eq!(c, exp);
 
         // Allocating new memory
         let c = &a - b;
-
-        assert_eq!(c[[0, 0]], -2.0);
-        assert_eq!(c[[0, 1]], -1.0);
-        assert_eq!(c[[1, 0]], 0.0);
-        assert_eq!(c[[1, 1]], 1.0);
-        assert_eq!(c[[2, 0]], 2.0);
-        assert_eq!(c[[2, 1]], 3.0);
+        assert_matrix_eq!(c, exp);
 
         // Reusing memory
         let c = a.clone() - &b;
-
-        assert_eq!(c[[0, 0]], -2.0);
-        assert_eq!(c[[0, 1]], -1.0);
-        assert_eq!(c[[1, 0]], 0.0);
-        assert_eq!(c[[1, 1]], 1.0);
-        assert_eq!(c[[2, 0]], 2.0);
-        assert_eq!(c[[2, 1]], 3.0);
+        assert_matrix_eq!(c, exp);
 
         // Reusing memory
         let c = a - b;
-
-        assert_eq!(c[[0, 0]], -2.0);
-        assert_eq!(c[[0, 1]], -1.0);
-        assert_eq!(c[[1, 0]], 0.0);
-        assert_eq!(c[[1, 1]], 1.0);
-        assert_eq!(c[[2, 0]], 2.0);
-        assert_eq!(c[[2, 1]], 3.0);
+        assert_matrix_eq!(c, exp);
     }
 
     #[test]
@@ -1169,45 +1146,25 @@ mod tests {
                         5., 6.];
         let b = 3.0;
 
+        let exp = matrix![1. / 3., 2. / 3.;
+                          3. / 3., 4. / 3.;
+                          5. / 3., 6. / 3.];
+
         // Allocating new memory
         let c = &a / &b;
-
-        assert_eq!(c[[0, 0]], 1.0 / 3.0);
-        assert_eq!(c[[0, 1]], 2.0 / 3.0);
-        assert_eq!(c[[1, 0]], 1.0);
-        assert_eq!(c[[1, 1]], 4.0 / 3.0);
-        assert_eq!(c[[2, 0]], 5.0 / 3.0);
-        assert_eq!(c[[2, 1]], 2.0);
+        assert_matrix_eq!(c, exp);
 
         // Allocating new memory
         let c = &a / b;
-
-        assert_eq!(c[[0, 0]], 1.0 / 3.0);
-        assert_eq!(c[[0, 1]], 2.0 / 3.0);
-        assert_eq!(c[[1, 0]], 1.0);
-        assert_eq!(c[[1, 1]], 4.0 / 3.0);
-        assert_eq!(c[[2, 0]], 5.0 / 3.0);
-        assert_eq!(c[[2, 1]], 2.0);
+        assert_matrix_eq!(c, exp);
 
         // Reusing memory
         let c = a.clone() / &b;
-
-        assert_eq!(c[[0, 0]], 1.0 / 3.0);
-        assert_eq!(c[[0, 1]], 2.0 / 3.0);
-        assert_eq!(c[[1, 0]], 1.0);
-        assert_eq!(c[[1, 1]], 4.0 / 3.0);
-        assert_eq!(c[[2, 0]], 5.0 / 3.0);
-        assert_eq!(c[[2, 1]], 2.0);
+        assert_matrix_eq!(c, exp);
 
         // Reusing memory
         let c = a / b;
-
-        assert_eq!(c[[0, 0]], 1.0 / 3.0);
-        assert_eq!(c[[0, 1]], 2.0 / 3.0);
-        assert_eq!(c[[1, 0]], 1.0);
-        assert_eq!(c[[1, 1]], 4.0 / 3.0);
-        assert_eq!(c[[2, 0]], 5.0 / 3.0);
-        assert_eq!(c[[2, 1]], 2.0);
+        assert_matrix_eq!(c, exp);
     }
 
     #[test]
