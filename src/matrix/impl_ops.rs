@@ -981,7 +981,36 @@ mod tests {
     }
 
     #[test]
-    fn matrix_vec_mul() {
+    fn index_slice() {
+        let mut b = Matrix::new(3, 3, (0..9).collect::<Vec<_>>());
+
+        {
+            let c = MatrixSlice::from_matrix(&b, [1, 1], 2, 2);
+
+            assert_eq!(c[[0, 0]], 4);
+            assert_eq!(c[[0, 1]], 5);
+            assert_eq!(c[[1, 0]], 7);
+            assert_eq!(c[[1, 1]], 8);
+        }
+
+
+        let mut c = MatrixSliceMut::from_matrix(&mut b, [1, 1], 2, 2);
+
+        assert_eq!(c[[0, 0]], 4);
+        assert_eq!(c[[0, 1]], 5);
+        assert_eq!(c[[1, 0]], 7);
+        assert_eq!(c[[1, 1]], 8);
+
+        c[[0, 0]] = 9;
+
+        assert_eq!(c[[0, 0]], 9);
+        assert_eq!(c[[0, 1]], 5);
+        assert_eq!(c[[1, 0]], 7);
+        assert_eq!(c[[1, 1]], 8);
+    }
+
+    #[test]
+    fn matrix_mul_f32_vec() {
         let a = matrix![1., 2.;
                         3., 4.;
                         5., 6.];
@@ -997,7 +1026,7 @@ mod tests {
     }
 
     #[test]
-    fn matrix_f32_mul() {
+    fn matrix_mul_f32_elemwise() {
         let a = matrix![1., 2.;
                         3., 4.;
                         5., 6.];
@@ -1024,7 +1053,7 @@ mod tests {
     }
 
     #[test]
-    fn matrix_add() {
+    fn matrix_add_f32_elemwise() {
         let a = matrix![1., 2.;
                         3., 4.;
                         5., 6.];
@@ -1054,7 +1083,7 @@ mod tests {
     }
 
     #[test]
-    fn matrix_f32_add() {
+    fn matrix_add_f32_broadcast() {
         let a = matrix![1., 2.;
                         3., 4.;
                         5., 6.];
@@ -1082,7 +1111,7 @@ mod tests {
     }
 
     #[test]
-    fn matrix_sub() {
+    fn matrix_sub_f32_elemwise() {
         let a = matrix![1., 2.;
                         3., 4.;
                         5., 6.];
@@ -1112,7 +1141,7 @@ mod tests {
     }
 
     #[test]
-    fn matrix_f32_sub() {
+    fn matrix_sub_f32_broadcast() {
         let a = matrix![1., 2.;
                         3., 4.;
                         5., 6.];
@@ -1140,7 +1169,7 @@ mod tests {
     }
 
     #[test]
-    fn matrix_f32_div() {
+    fn matrix_div_f32_broadcast() {
         let a = matrix![1., 2.;
                         3., 4.;
                         5., 6.];
@@ -1168,7 +1197,7 @@ mod tests {
     }
 
     #[test]
-    fn add_slice() {
+    fn matrixslice_add_f32_broadcast() {
         let a = 3.0;
         let mut b = Matrix::ones(3, 3) * 2.;
         let c = Matrix::ones(2, 2);
@@ -1205,7 +1234,7 @@ mod tests {
     }
 
     #[test]
-    fn sub_slice() {
+    fn matrixslice_sub_f32_broadcast() {
         let a = 3.0;
         let b = Matrix::ones(2, 2);
         let mut c = Matrix::ones(3, 3) * 2.;
@@ -1242,7 +1271,7 @@ mod tests {
     }
 
     #[test]
-    fn div_slice() {
+    fn matrixslice_div_f32_broadcast() {
         let a = 3.0;
 
         let mut b = Matrix::ones(3, 3) * 2.;
@@ -1261,53 +1290,7 @@ mod tests {
     }
 
     #[test]
-    fn neg_slice() {
-        let b = Matrix::ones(3, 3) * 2.;
-
-        let c = MatrixSlice::from_matrix(&b, [1, 1], 2, 2);
-
-        let m = -c;
-        assert_eq!(m.into_vec(), vec![-2.0;4]);
-
-        let mut b = Matrix::ones(3, 3) * 2.;
-
-        let c = MatrixSliceMut::from_matrix(&mut b, [1, 1], 2, 2);
-
-        let m = -c;
-        assert_eq!(m.into_vec(), vec![-2.0;4]);
-    }
-
-    #[test]
-    fn index_slice() {
-        let mut b = Matrix::new(3, 3, (0..9).collect::<Vec<_>>());
-
-        {
-            let c = MatrixSlice::from_matrix(&b, [1, 1], 2, 2);
-
-            assert_eq!(c[[0, 0]], 4);
-            assert_eq!(c[[0, 1]], 5);
-            assert_eq!(c[[1, 0]], 7);
-            assert_eq!(c[[1, 1]], 8);
-        }
-
-
-        let mut c = MatrixSliceMut::from_matrix(&mut b, [1, 1], 2, 2);
-
-        assert_eq!(c[[0, 0]], 4);
-        assert_eq!(c[[0, 1]], 5);
-        assert_eq!(c[[1, 0]], 7);
-        assert_eq!(c[[1, 1]], 8);
-
-        c[[0, 0]] = 9;
-
-        assert_eq!(c[[0, 0]], 9);
-        assert_eq!(c[[0, 1]], 5);
-        assert_eq!(c[[1, 0]], 7);
-        assert_eq!(c[[1, 1]], 8);
-    }
-
-    #[test]
-    fn matrix_add_assign() {
+    fn matrix_add_assign_int_broadcast() {
         let mut a = Matrix::new(3, 3, (0..9).collect::<Vec<_>>());
 
         a += &2;
@@ -1317,7 +1300,10 @@ mod tests {
 
         a += 2;
         assert_eq!(a.into_vec(), (2..11).collect::<Vec<_>>());
+    }
 
+    #[test]
+    fn matrix_add_assign_int_elemwise() {
         let mut a = Matrix::new(3, 3, (0..9).collect::<Vec<_>>());
         let b = Matrix::new(3, 3, (0..9).collect::<Vec<_>>());
 
@@ -1350,11 +1336,10 @@ mod tests {
         let mut a = Matrix::new(3, 3, (0..9).collect::<Vec<_>>());
         a += c;
         assert_eq!(a.into_vec(), vec![0, 2, 4, 7, 9, 11, 14, 16, 18]);
-
     }
 
     #[test]
-    fn matrix_sub_assign() {
+    fn matrix_sub_assign_int_broadcast() {
         let mut a = Matrix::new(3, 3, (0..9).collect::<Vec<i32>>());
 
         a -= &2;
@@ -1363,7 +1348,10 @@ mod tests {
         let mut a = Matrix::new(3, 3, (0..9).collect::<Vec<i32>>());
         a -= 2;
         assert_eq!(a.into_vec(), (-2..7).collect::<Vec<_>>());
+    }
 
+    #[test]
+    fn matrix_sub_assign_int_elemwise() {
         let mut a = Matrix::new(3, 3, (0..9).collect::<Vec<_>>());
         let b = Matrix::new(3, 3, (0..9).collect::<Vec<_>>());
 
@@ -1398,7 +1386,7 @@ mod tests {
     }
 
     #[test]
-    fn matrix_div_assign() {
+    fn matrix_div_assign_broadcast() {
         let a_data = vec![1f32, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0];
         let res_data = vec![0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5];
         let mut a = Matrix::new(3, 3, a_data.clone());
@@ -1412,7 +1400,7 @@ mod tests {
     }
 
     #[test]
-    fn matrix_mul_assign() {
+    fn matrix_mul_assign_broadcast() {
         let a_data = vec![1f32, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0];
         let res_data = vec![2f32, 4.0, 6.0, 8.0, 10.0, 12.0, 14.0, 16.0, 18.0];
         let mut a = Matrix::new(3, 3, a_data.clone());
@@ -1427,7 +1415,7 @@ mod tests {
 
     #[test]
     #[allow(unused_assignments, unused_variables)]
-    fn slice_add_assign() {
+    fn matrixslice_add_assign_int_broadcast() {
         let mut a = Matrix::new(3, 3, (0..9).collect::<Vec<i32>>());
         {
             let mut a_slice = MatrixSliceMut::from_matrix(&mut a, [0, 0], 3, 3);
@@ -1442,7 +1430,11 @@ mod tests {
             a_slice += 2;
         }
         assert_eq!(a.into_vec(), (2..11).collect::<Vec<_>>());
+    }
 
+    #[test]
+    #[allow(unused_assignments, unused_variables)]
+    fn matrixslice_add_assign_int_elemwise() {
         let mut a = Matrix::new(3, 3, (0..9).collect::<Vec<i32>>());
         let b = Matrix::new(3, 3, (0..9).collect::<Vec<_>>());
 
@@ -1491,12 +1483,11 @@ mod tests {
             a_slice += c;
         }
         assert_eq!(a.into_vec(), vec![0, 2, 4, 7, 9, 11, 14, 16, 18]);
-
     }
 
     #[test]
     #[allow(unused_assignments, unused_variables)]
-    fn slice_sub_assign() {
+    fn matrixslice_sub_assign_int_elemwise() {
         let mut a = Matrix::new(3, 3, (0..9).collect::<Vec<i32>>());
         {
             let mut a_slice = MatrixSliceMut::from_matrix(&mut a, [0, 0], 3, 3);
@@ -1518,7 +1509,11 @@ mod tests {
             a_slice -= &b;
         }
         assert_eq!(a.into_vec(), vec![0; 9]);
+    }
 
+    #[test]
+    #[allow(unused_assignments, unused_variables)]
+    fn matrixslice_sub_assign_int_broadcast() {
         let mut a = Matrix::new(3, 3, (0..9).collect::<Vec<i32>>());
         {
             let mut a_slice = MatrixSliceMut::from_matrix(&mut a, [0, 0], 3, 3);
@@ -1564,7 +1559,7 @@ mod tests {
 
     #[test]
     #[allow(unused_assignments, unused_variables)]
-    fn slice_div_assign() {
+    fn matrixslice_div_assign_f32_broadcast() {
         let a_data = vec![1f32, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0];
         let res_data = vec![0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5];
         let mut a = Matrix::new(3, 3, a_data.clone());
@@ -1585,7 +1580,7 @@ mod tests {
 
     #[test]
     #[allow(unused_assignments, unused_variables)]
-    fn slice_mul_assign() {
+    fn matrixslice_mul_assign_f32_broadcast() {
         let a_data = vec![1f32, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0];
         let res_data = vec![2f32, 4.0, 6.0, 8.0, 10.0, 12.0, 14.0, 16.0, 18.0];
         let mut a = Matrix::new(3, 3, a_data.clone());
@@ -1602,5 +1597,70 @@ mod tests {
             a_slice *= 2f32;
         }
         assert_eq!(a.into_vec(), res_data.clone());
+    }
+
+    #[test]
+    fn matrix_neg_f32() {
+        let b = matrix![1., 2., 3.;
+                        4., 5., 6.];
+        let exp = matrix![-1., -2., -3.;
+                          -4., -5., -6.];
+        assert_matrix_eq!(-&b, exp);
+        assert_matrix_eq!(-b, exp);
+    }
+
+    #[test]
+    fn matrixslice_neg_f32() {
+        let b = Matrix::ones(3, 3) * 2.;
+        let c = MatrixSlice::from_matrix(&b, [1, 1], 2, 2);
+
+        let m = -c;
+        assert_eq!(m.into_vec(), vec![-2.0;4]);
+
+        let mut b = Matrix::ones(3, 3) * 2.;
+
+        let c = MatrixSliceMut::from_matrix(&mut b, [1, 1], 2, 2);
+
+        let m = -c;
+        assert_eq!(m.into_vec(), vec![-2.0;4]);
+    }
+
+    #[test]
+    fn matrix_not_int() {
+        let b = matrix![1, 2, 3;
+                        4, 5, 6];
+        let exp = matrix![!1, !2, !3;
+                          !4, !5, !6];
+        assert_matrix_eq!(!&b, exp);
+        assert_matrix_eq!(!b, exp);
+    }
+
+    #[test]
+    fn matrix_not_bool() {
+        let b = matrix![true, false, true;
+                        false, true, false];
+        let exp = matrix![false, true, false;
+                          true, false, true];
+        assert_matrix_eq!(!&b, exp);
+        assert_matrix_eq!(!b, exp);
+    }
+
+    #[test]
+    fn matrixslice_not_bool() {
+        let b = matrix![true, false, true;
+                        false, true, false;
+                        true, false, true];
+        let c = MatrixSlice::from_matrix(&b, [1, 1], 2, 2);
+
+        let m = !c;
+        assert_eq!(m, matrix![false, true; true, false]);
+
+        let b = matrix![true, false, true;
+                        false, true, false;
+                        true, false, true];
+        let c = MatrixSlice::from_matrix(&b, [1, 1], 2, 2);
+
+        let m = !c;
+        assert_eq!(m, matrix![false, true; true, false]);
     }
 }
